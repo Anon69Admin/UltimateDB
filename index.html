@@ -1,363 +1,327 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>licifersec Osint</title>
-  <meta name="description" content="LuciferSec Ultimate Osint)" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <style>
-    /* === Variables (themes) === */
-    :root{
-      --bg:#061015;
-      --panel: rgba(1,6,8,0.65);
-      --accent: #00ff9c;
-      --accent2:#00b38f;
-      --glass: rgba(0,255,156,0.06);
-      --text:#e6fff6;
-      --muted: rgba(230,255,246,0.6);
-      --card-bg: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(255,255,255,0.01));
-      --shadow: 0 12px 48px rgba(0,0,0,0.35);
-    }
-    .theme-cyan {
-      --bg:linear-gradient(180deg,#020409,#071017);
-      --panel: rgba(8,12,18,0.62);
-      --accent:#00eaff;
-      --accent2:#ff4d9e;
-      --glass: rgba(0,234,255,0.04);
-      --text:#e6f7fb;
-      --muted: rgba(230,247,251,0.6);
-      --shadow: 0 12px 48px rgba(0,0,0,0.35);
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Faxal DB — SIM Information Tool</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-    /* basic */
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial; -webkit-font-smoothing:antialiased;}
-    body{
-      background: var(--bg);
-      color:var(--text);
-      padding:18px;
-      box-sizing:border-box;
-      -webkit-tap-highlight-color: transparent;
-      overflow-x:hidden;
-    }
-    /* container */
-    .container{
-      max-width:1100px;margin:0 auto;background:rgba(10,14,15,0.45);border-radius:14px;padding:18px;box-shadow:var(--shadow);border:1px solid var(--glass);backdrop-filter: blur(6px);position:relative;z-index:5;
-    }
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .logo{display:flex;gap:12px;align-items:center}
-    .dot{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 36px rgba(0,0,0,0.25), inset 0 -8px 30px rgba(0,0,0,0.3)}
-    h1{margin:0;font-size:20px;color:var(--accent);text-shadow:0 0 18px rgba(0,255,156,0.05);letter-spacing:0.6px;animation:glow 3.6s infinite}
-    @keyframes glow{0%{filter:drop-shadow(0 0 6px rgba(0,0,0,0.0))}50%{filter:drop-shadow(0 0 18px rgba(0,255,156,0.08))}100%{filter:drop-shadow(0 0 6px rgba(0,0,0,0.0))}}
-    .muted{color:var(--muted);font-size:13px}
-
-    /* controls */
-    .controls{display:flex;gap:8px;align-items:center}
-    #themeToggle{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer}
-    #themeToggle i{margin-right:8px}
-
-    /* options */
-    .search-options{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .option-btn{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:10px 14px;border-radius:12px;color:var(--muted);cursor:pointer;display:flex;gap:8px;align-items:center;font-weight:700;transition:all .12s}
-    .option-btn.active{color:var(--text);border:1px solid rgba(255,255,255,0.05);background:linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));box-shadow:0 8px 40px rgba(0,0,0,0.18)}
-
-    /* search */
-    .search-area{display:flex;gap:12px;margin-top:12px;align-items:center}
-    #searchInput{flex:1;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);background:rgba(0,0,0,0.2);color:var(--text);outline:none;font-size:15px;min-width:0}
-    #searchBtn{padding:12px 18px;border-radius:14px;border:none;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#031018;font-weight:800;cursor:pointer;box-shadow:0 16px 46px rgba(0,0,0,0.22);display:flex;gap:10px;align-items:center}
-
-    /* panel */
-    .panel{margin-top:18px;padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));border:1px solid var(--glass)}
-    .no-data{padding:20px;text-align:center;color:var(--muted);font-weight:800}
-
-    /* progress */
-    .progress-wrap{margin-top:12px}
-    .progress{width:100%;height:12px;border-radius:12px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));overflow:hidden;border:1px solid rgba(255,255,255,0.02)}
-    .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .22s ease}
-
-    /* result cards */
-    .result-wrap{display:flex;flex-direction:column;gap:12px}
-    .result-card{display:flex;flex-wrap:wrap;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.03);background:var(--card-bg);box-shadow:0 12px 36px rgba(0,0,0,0.24)}
-    .result-left{flex:0 0 36%;min-width:120px;padding:18px;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg, rgba(0,0,0,0.04), rgba(0,0,0,0.02));border-right:3px solid rgba(255,255,255,0.02)}
-    .result-left::before{content:'';position:absolute;left:10px;top:10px;bottom:10px;width:8px;border-radius:8px;background:linear-gradient(180deg,var(--accent),var(--accent2));box-shadow:0 8px 26px rgba(0,255,156,0.06)}
-    .result-label{position:relative;z-index:2;color:var(--accent);font-weight:900;text-transform:uppercase;letter-spacing:0.6px}
-    .result-right{flex:1;padding:14px 18px;color:var(--text);font-family:Consolas,monospace;font-size:14px;white-space:pre-wrap}
-
-    /* collapsible */
-    .section-header{cursor:pointer;padding:12px;display:flex;align-items:center;justify-content:space-between;border-radius:8px;color:var(--accent);font-weight:900}
-    .section-content{display:none;padding:8px 4px 12px 4px}
-    .section-header.active + .section-content{display:block}
-
-    /* credit */
-    .credit-bar{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;flex-wrap:wrap}
-    .credit-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#031018;font-weight:900;text-decoration:none;box-shadow:0 18px 60px rgba(0,0,0,0.2)}
-    .credit-btn .pulse{width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 18px rgba(255,255,255,0.35)}
-
-    /* responsive tweaks */
-    @media (max-width:720px){
-      .result-left{flex:0 0 38%;min-width:110px;padding:12px}
-      .result-right{padding:12px;font-size:15px}
-      #searchInput{padding:12px 14px}
-      #searchBtn{padding:10px 14px}
-    }
-    @media (max-width:420px){
-      .result-card{flex-direction:column}
-      .result-left{border-right:none;border-bottom:1px solid rgba(255,255,255,0.02)}
-    }
-
-    /* matrix canvas layering */
-    #matrixCanvas{position:fixed;left:0;top:0;right:0;bottom:0;z-index:1;mix-blend-mode:screen;pointer-events:none;opacity:0.85}
-    /* page content sits above */
-    .page-content{position:relative;z-index:5}
-
-    /* intro overlay */
-    #introOverlay{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.9), rgba(0,0,0,0.85));display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:9999}
-    #introBox{padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));box-shadow:var(--shadow);text-align:center;color:var(--muted)}
-    .bootbar{width:320px;height:8px;border-radius:8px;background:rgba(255,255,255,0.03);overflow:hidden}
-    .bootfill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.08s linear}
-
-    /* cute anime boy (SVG wrapper) */
-    #animeBoy{
-      position:fixed;right:18px;bottom:18px;width:110px;height:120px;z-index:10;cursor:pointer;filter:drop-shadow(0 12px 26px rgba(0,0,0,0.6));
-      transition:transform .18s ease;
-    }
-    #animeBoy:hover{transform:translateY(-6px) scale(1.02)}
-
-    /* small toast */
-    .temp-toast{position:fixed;right:24px;bottom:150px;background:rgba(0,0,0,0.6);color:var(--text);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);z-index:99999}
-  </style>
+<style>
+  /* CRT hacker green theme — flat glow like your screenshot */
+  :root{
+    --bg:#000;
+    --panel:#031006;
+    --green:#00ff2a;
+    --muted-green: rgba(0,255,42,0.12);
+    --text:#b6ffb6;
+    --accent:#00c11f;
+    --red:#ff4b4b;
+    --glass: rgba(0,10,0,0.55);
+  }
+  html,body{height:100%;margin:0;font-family: "Courier New", Courier, monospace;background:linear-gradient(#000, #020200 160%);color:var(--text);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:18px auto;padding:18px;border-radius:10px;background:transparent}
+  .header{border-radius:10px;padding:18px;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.3));box-shadow:0 0 28px rgba(0,255,42,0.06) inset;border:1px solid rgba(0,255,42,0.06)}
+  .title{font-size:34px;color:var(--green);letter-spacing:2px;text-align:center;margin:0;text-shadow:0 0 8px rgba(0,255,42,0.18)}
+  .subtitle{font-size:11px;color:var(--green);text-align:center;margin-top:6px;opacity:0.9}
+  .top-controls{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .dark-btn{background:transparent;border:1px solid rgba(0,255,42,0.12);padding:8px 12px;border-radius:6px;color:var(--green);cursor:pointer}
+  /* main panel */
+  .panel{margin-top:18px;padding:20px;background:linear-gradient(180deg, rgba(0,15,0,0.18), rgba(0,0,0,0.25));border-radius:12px;border:1px solid rgba(0,255,42,0.06);box-shadow:0 8px 60px rgba(0,255,42,0.02) inset}
+  .section-title{font-size:18px;color:var(--green);text-align:center;letter-spacing:1px;margin-bottom:12px}
+  .options{display:flex;gap:12px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+  .option{background:linear-gradient(90deg, rgba(0,255,42,0.06), rgba(0,0,0,0.02));border:1px solid rgba(0,255,42,0.12);padding:10px 18px;border-radius:8px;color:var(--green);cursor:pointer;min-width:180px;text-align:center}
+  .option.active{background:linear-gradient(90deg, rgba(0,255,42,0.12), rgba(0,0,0,0.02));box-shadow:0 6px 20px rgba(0,255,42,0.06)}
+  .search-row{display:flex;gap:10px;align-items:center;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+  .input{background:#041207;border:1px solid rgba(0,255,42,0.06);color:var(--green);padding:12px 14px;border-radius:6px;min-width:320px;outline:none}
+  .btn{background:linear-gradient(90deg,var(--accent),#00ff6f);border:none;padding:12px 16px;border-radius:6px;color:#001104;font-weight:700;cursor:pointer;box-shadow:0 10px 30px rgba(0,255,42,0.04)}
+  /* big output box */
+  .output{height:170px;background:#060a05;border-radius:8px;border:1px solid rgba(0,255,42,0.06);padding:16px;margin-top:10px;color:var(--green);overflow:auto;white-space:pre-wrap}
+  .awaiting{color:var(--red);text-align:center;font-weight:700;letter-spacing:2px}
+  .small-muted{text-align:center;color:rgba(0,255,42,0.4);font-size:12px;margin-top:10px}
+  /* results rows (CRT style) */
+  .res-row{display:flex;justify-content:space-between;padding:8px 10px;border-top:1px dashed rgba(0,255,42,0.03)}
+  .res-key{color:var(--green);font-weight:700}
+  .res-val{color:var(--text)}
+  /* family members list */
+  .members{margin-top:8px;border-top:1px dashed rgba(0,255,42,0.03);padding-top:8px}
+  .member-item{padding:6px 0;border-bottom:1px solid rgba(0,255,42,0.02)}
+  /* progress bar (thin) */
+  .progress-wrap{margin-top:12px;height:8px;background:rgba(0,255,42,0.03);border-radius:6px;overflow:hidden;border:1px solid rgba(0,255,42,0.04)}
+  .progress-bar{height:100%;width:0;background:linear-gradient(90deg, rgba(0,255,42,0.18), rgba(0,255,42,0.5));transition:width 200ms linear}
+  /* footer credit */
+  .credit-wrap{display:flex;justify-content:center;margin-top:12px}
+  .credit{background:linear-gradient(90deg, rgba(0,255,42,0.06), rgba(0,0,0,0.02));border:1px solid rgba(0,255,42,0.08);padding:10px 18px;border-radius:8px;color:var(--green);cursor:pointer;box-shadow:0 8px 16px rgba(0,255,42,0.02)}
+  /* phone-friendly */
+  @media (max-width:560px){
+    .input{min-width:200px}
+    .option{min-width:140px}
+  }
+</style>
 </head>
 <body>
-  <!-- Matrix canvas (background) -->
-  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
-
-  <!-- Intro boot overlay -->
-  <div id="introOverlay" aria-hidden="false">
-    <div id="introBox">
-      <div style="font-weight:900;color:var(--accent);font-size:20px;letter-spacing:1px">Initializing Nexus System</div>
-      <div style="margin-top:6px;color:var(--muted)">Booting modules • Matrix engine • UI shaders</div>
-      <div class="bootbar" aria-hidden="true"><div id="bootfill" class="bootfill"></div></div>
-      <div style="margin-top:8px;color:var(--muted);font-size:13px">Welcome — This interface will be ready shortly</div>
-    </div>
-  </div>
-
-  <div class="page-content">
-    <div class="container">
-      <div class="topbar">
-        <div class="logo">
-          <div class="dot" aria-hidden="true"></div>
-          <div>
-            <h1>LuciferSec Osint</h1>
-            <div class="muted">Multi-API Lookup • Aadhaar • CallTracer • Final</div>
-          </div>
+  <div class="wrap">
+    <div class="header">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div class="title">Faxal DB</div>
+          <div class="subtitle">SECURE INFORMATION RETRIEVAL SYSTEM</div>
         </div>
-        <div class="controls">
-          <button id="themeToggle" title="Toggle theme"><i class="fas fa-exchange-alt"></i> THEME</button>
-        </div>
-      </div>
-
-      <div class="search-options">
-        <button class="option-btn active" id="phoneOption"><i class="fas fa-phone"></i> SEARCH BY PHONE (PK)</button>
-        <button class="option-btn" id="cnicOption"><i class="fas fa-id-card"></i> SEARCH BY CNIC (PK)</button>
-        <button class="option-btn" id="aadhaarOption"><i class="fas fa-id-badge"></i> SEARCH BY AADHAAR (IN)</button>
-        <button class="option-btn" id="indiaPhoneOption"><i class="fas fa-mobile"></i> SEARCH BY INDIAN PHONE (IN)</button>
-      </div>
-
-      <div class="search-area">
-        <input id="searchInput" placeholder="ENTER 11-DIGIT PHONE NUMBER (PK)" maxlength="11" inputmode="numeric" pattern="\d*">
-        <button id="searchBtn"><i class="fas fa-search"></i> SCAN</button>
-      </div>
-
-      <div class="panel" id="resultPanel">
-        <div id="resultContainer" class="no-data">ENTER A NUMBER / CNIC / AADHAAR AND CLICK SCAN</div>
-
-        <div class="progress-wrap" id="progressWrap" style="display:none">
-          <div class="progress-label">SCANNING DATABASE... <span id="progressPercent">0%</span></div>
-          <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
-        </div>
-
-        <div class="credit-bar">
-          <a href="https://t.me/LuciferSec" id="creditLink" class="credit-btn" target="_blank" rel="noopener noreferrer" title="Telegram @LuciferSec">
-            <span class="pulse"></span> CREDIT: @LuciferSec
-          </a>
-          <div class="muted">Made with ♥ by Faxal</div>
+        <div style="text-align:right">
+          <button id="toggleDark" class="dark-btn"><i class="fas fa-circle-half-stroke"></i> DARK MODE</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Cute animated "3D" anime boy (SVG) - lightweight inline vector with subtle bobbing -->
-  <div id="animeBoy" title="Nexus assistant">
-    <svg viewBox="0 0 200 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="cute anime boy">
-      <defs>
-        <linearGradient id="hairG" x1="0" x2="1"><stop offset="0" stop-color="#1b2b20"/><stop offset="1" stop-color="#163a2e"/></linearGradient>
-        <linearGradient id="eyeG" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#aef1d0"/></linearGradient>
-        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
-      </defs>
-      <g transform="translate(0,6)">
-        <ellipse cx="100" cy="180" rx="58" ry="14" fill="rgba(0,0,0,0.45)"></ellipse>
-        <!-- body -->
-        <g id="b">
-          <rect x="56" y="92" rx="14" ry="14" width="88" height="72" fill="url(#hairG)"></rect>
-          <rect x="70" y="106" rx="8" width="60" height="50" fill="var(--accent)"></rect>
-        </g>
-        <!-- head -->
-        <g id="h" transform="translate(0,0)">
-          <circle cx="100" cy="64" r="44" fill="#ffd8c9" stroke="rgba(0,0,0,0.06)" stroke-width="1.5"></circle>
-          <path d="M72 62 q28 -20 56 0" fill="url(#hairG)"></path>
-          <ellipse cx="85" cy="66" rx="6" ry="8" fill="var(--text)" />
-          <ellipse cx="115" cy="66" rx="6" ry="8" fill="var(--text)" />
-          <circle cx="83" cy="68" r="2.5" fill="#233a2e"/>
-          <circle cx="113" cy="68" r="2.5" fill="#233a2e"/>
-          <path d="M90 82 q10 10 20 0" stroke="#4b2f2a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-          <!-- small neon visor / headset -->
-          <rect x="60" y="46" width="80" height="8" rx="6" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.02)"></rect>
-          <rect x="68" y="48" width="64" height="4" rx="3" fill="linear-gradient(#fff, #eee)"></rect>
-        </g>
-      </g>
-      <animateTransform xlink:href="#h" attributeName="transform" type="translate" values="0,0; 0,-6; 0,0" dur="2.4s" repeatCount="indefinite"/>
-      <animateTransform xlink:href="#b" attributeName="transform" type="translate" values="0,0; 0,-3; 0,0" dur="2.6s" repeatCount="indefinite"/>
-    </svg>
-  </div>
+    <div class="panel">
+      <div class="section-title">SIM INFORMATION TOOL</div>
 
-  <!-- Toast area placeholder -->
-  <div id="toastRoot" aria-live="polite"></div>
+      <div class="options">
+        <div id="phoneOpt" class="option active"><i class="fas fa-phone"></i> SEARCH BY PHONE</div>
+        <div id="cnicOpt" class="option"><i class="fas fa-id-card"></i> SEARCH BY CNIC</div>
+        <div id="aadhaarOpt" class="option"><i class="fas fa-id-badge"></i> SEARCH BY AADHAAR (IN)</div>
+        <div id="indiaOpt" class="option"><i class="fas fa-mobile"></i> SEARCH BY INDIAN PHONE</div>
+      </div>
+
+      <div class="search-row">
+        <input id="inputField" class="input" placeholder="ENTER 11-DIGIT PHONE NUMBER" maxlength="11">
+        <button id="scanBtn" class="btn"><i class="fas fa-magnifying-glass"></i> INITIATE SCAN</button>
+      </div>
+
+      <div id="output" class="output">
+        <div class="awaiting">AWAITING INPUT... READY TO SCAN</div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap" style="display:none">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+
+      <div class="small-muted">SYSTEM CREATED BY FAZAL-E-AZEEM</div>
+
+      <div class="credit-wrap">
+        <!-- placeholder link; change href locally to your Telegram if desired -->
+        <a id="creditBtn" class="credit" href="#" title="Credit">Contact LuciferSec</a>
+      </div>
+    </div>
+  </div>
 
 <script>
-/* ===== FINAL SCRIPT: Matrix, UI, Fetch, Sounds, Intro ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  // ---------- API TEMPLATES (keep as requested) ----------
-  const DEFAULT_API_TEMPLATE = 'https://fam-official.serv00.net/api/database.php?number={number}';
-  const AADHAAR_API_TEMPLATE = 'https://khandankanaam.alphaapi.workers.dev/fetch?key=paidchx&aadhaar={number}';
-  const INDIA_PHONE_API_TEMPLATE = 'https://calltracerinfoapi.vercel.app/api?number={number}';
-  // ------------------------------------------------------
+/* APIs configured */
+const DEFAULT_API_TEMPLATE = 'https://fam-official.serv00.net/api/database.php?number={number}';
+const AADHAAR_API_TEMPLATE = 'https://khandankanaam.alphaapi.workers.dev/fetch?key=paidchx&aadhaar={number}';
+const INDIA_PHONE_API_TEMPLATE = 'https://calltracerinfoapi.vercel.app/api?number={number}';
 
-  // UI refs
-  const phoneOption = document.getElementById('phoneOption');
-  const cnicOption = document.getElementById('cnicOption');
-  const aadhaarOption = document.getElementById('aadhaarOption');
-  const indiaPhoneOption = document.getElementById('indiaPhoneOption');
-  const searchInput = document.getElementById('searchInput');
-  const searchBtn = document.getElementById('searchBtn');
-  const resultContainer = document.getElementById('resultContainer');
-  const progressWrap = document.getElementById('progressWrap');
-  const progressBar = document.getElementById('progressBar');
-  const progressPercent = document.getElementById('progressPercent');
-  const themeToggle = document.getElementById('themeToggle');
-  const pageRoot = document.querySelector('.page-content');
-  const introOverlay = document.getElementById('introOverlay');
-  const bootfill = document.getElementById('bootfill');
-  const animeBoy = document.getElementById('animeBoy');
-  const matrixCanvas = document.getElementById('matrixCanvas');
+/* UI refs */
+const phoneOpt = document.getElementById('phoneOpt');
+const cnicOpt = document.getElementById('cnicOpt');
+const aadhaarOpt = document.getElementById('aadhaarOpt');
+const indiaOpt = document.getElementById('indiaOpt');
+const inputField = document.getElementById('inputField');
+const scanBtn = document.getElementById('scanBtn');
+const output = document.getElementById('output');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+const creditBtn = document.getElementById('creditBtn');
 
-  let searchType = 'phone'; // phone, cnic, aadhaar, indiaPhone
+let searchType = 'phone'; // phone | cnic | aadhaar | indiaPhone
+let progressInterval = null;
 
-  // ---------- Matrix Canvas Setup (classic vertical rain with depth) ----------
-  const ctx = matrixCanvas.getContext('2d');
-  let W = matrixCanvas.width = window.innerWidth;
-  let H = matrixCanvas.height = window.innerHeight;
-  const columns = Math.floor(W / 16);
-  const drops = new Array(columns).fill(0).map(() => ({
-    y: Math.random() * H,
-    speed: 2 + Math.random() * 3,
-    len: 6 + Math.floor(Math.random()*12),
-    x: 0
-  }));
-  function resetCanvasSize(){
-    W = matrixCanvas.width = window.innerWidth;
-    H = matrixCanvas.height = window.innerHeight;
+/* option handlers */
+function clearActive(){
+  [phoneOpt,cnicOpt,aadhaarOpt,indiaOpt].forEach(o=>o.classList.remove('active'));
+}
+phoneOpt.addEventListener('click',()=>{
+  clearActive(); phoneOpt.classList.add('active'); searchType='phone';
+  inputField.placeholder='ENTER 11-DIGIT PHONE NUMBER'; inputField.maxLength=11; inputField.value=''; showAwaiting();
+});
+cnicOpt.addEventListener('click',()=>{
+  clearActive(); cnicOpt.classList.add('active'); searchType='cnic';
+  inputField.placeholder='ENTER 13-DIGIT CNIC NUMBER'; inputField.maxLength=13; inputField.value=''; showAwaiting();
+});
+aadhaarOpt.addEventListener('click',()=>{
+  clearActive(); aadhaarOpt.classList.add('active'); searchType='aadhaar';
+  inputField.placeholder='ENTER 12-DIGIT AADHAAR NUMBER'; inputField.maxLength=12; inputField.value=''; showAwaiting();
+});
+indiaOpt.addEventListener('click',()=>{
+  clearActive(); indiaOpt.classList.add('active'); searchType='indiaPhone';
+  inputField.placeholder='ENTER 10-DIGIT INDIAN PHONE NUMBER'; inputField.maxLength=10; inputField.value=''; showAwaiting();
+});
+
+/* awaiting */
+function showAwaiting(){
+  output.innerHTML = '<div class="awaiting">AWAITING INPUT... READY TO SCAN</div>';
+}
+
+/* progress sim */
+function startProgress(){
+  progressWrap.style.display='block';
+  progressBar.style.width='4%';
+  let pct=4;
+  clearInterval(progressInterval);
+  progressInterval = setInterval(()=>{
+    const add = Math.random()*8 + (pct < 60 ? 6 : 1.8);
+    pct = Math.min(92, Math.round(pct + add));
+    progressBar.style.width = pct + '%';
+  }, 420);
+}
+function endProgress(){
+  clearInterval(progressInterval);
+  progressBar.style.width = '100%';
+  setTimeout(()=>{ progressWrap.style.display='none'; progressBar.style.width='0%'; }, 500);
+}
+
+/* fetch + display */
+scanBtn.addEventListener('click', doSearch);
+inputField.addEventListener('keypress', (e)=>{ if(e.key==='Enter') doSearch(); });
+
+function buildUrl(template, number){
+  return template.replace('{number}', encodeURIComponent(number));
+}
+
+function doSearch(){
+  const val = inputField.value.trim();
+  if(!val){ showOutputError('PLEASE ENTER A VALUE'); return; }
+  if(!/^\d+$/.test(val)){ showOutputError('INVALID INPUT — DIGITS ONLY'); return; }
+  if(searchType==='phone' && val.length!==11){ showOutputError('PHONE MUST BE 11 DIGITS'); return; }
+  if(searchType==='cnic' && val.length!==13){ showOutputError('CNIC MUST BE 13 DIGITS'); return; }
+  if(searchType==='aadhaar' && val.length!==12){ showOutputError('AADHAAR MUST BE 12 DIGITS'); return; }
+  if(searchType==='indiaPhone' && val.length!==10){ showOutputError('INDIAN PHONE MUST BE 10 DIGITS'); return; }
+
+  // start
+  startProgress();
+  output.innerHTML = '<div class="awaiting" style="color:var(--accent)">SCANNING DATABASE... PLEASE WAIT</div>';
+
+  let url;
+  if(searchType==='aadhaar') url = buildUrl(AADHAAR_API_TEMPLATE, val);
+  else if(searchType==='indiaPhone') url = buildUrl(INDIA_PHONE_API_TEMPLATE, val);
+  else url = buildUrl(DEFAULT_API_TEMPLATE, val);
+
+  fetch(url).then(r=>{
+    if(!r.ok) throw new Error('NETWORK');
+    return r.json();
+  }).then(data=>{
+    endProgress();
+    handleData(data);
+  }).catch(err=>{
+    // try proxy fallback
+    console.warn('Direct fetch fail, trying proxy', err);
+    const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+    fetch(proxy).then(r=>{
+      if(!r.ok) throw new Error('PROXY_FAIL');
+      return r.json();
+    }).then(data=>{
+      endProgress();
+      handleData(data);
+    }).catch(e=>{
+      endProgress();
+      showOutputError('DATABASE CONNECTION FAILED. TRY AGAIN');
+      console.error(e);
+    });
+  });
+}
+
+/* display helpers */
+function showOutputError(msg){
+  progressWrap.style.display='none';
+  output.innerHTML = '<div class="awaiting" style="color:var(--red)">'+msg+'</div>';
+}
+function handleData(data){
+  // Aadhaar household
+  if(data && data.homeStateName && Array.isArray(data.memberDetailsList)){
+    displayAadhaar(data);
+    return;
   }
-  window.addEventListener('resize', () => {
-    resetCanvasSize();
-  });
-
-  function drawMatrix(){
-    ctx.clearRect(0,0,W,H);
-    ctx.globalCompositeOperation = 'lighter';
-    for(let i=0;i<drops.length;i++){
-      const d = drops[i];
-      if(!d.x) d.x = i * 16 + (Math.random()*6);
-      ctx.font = '12px monospace';
-      for(let k=0;k<d.len;k++){
-        const text = randomChar();
-        const y = d.y - k*14;
-        const alpha = Math.max(0.08, 1 - k*0.12);
-        ctx.fillStyle = `rgba(0,255,156,${alpha})`;
-        ctx.fillText(text, d.x, y);
-      }
-      d.y += d.speed + Math.random()*2;
-      d.speed += 0.02*(Math.random()-0.5);
-      if(d.y > H + d.len*14) {
-        d.y = -20 - Math.random()*200;
-        d.speed = 2 + Math.random()*3;
-      }
-    }
-    requestAnimationFrame(drawMatrix);
+  // Call tracer style
+  if(data && (data['Owner Name'] || data['SIM card'] || data['Mobile State'])){
+    displayCallTracer(data);
+    return;
   }
-  function randomChar(){
-    const chars = '01あいうアカサタナハマヤラワABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return chars.charAt(Math.floor(Math.random()*chars.length));
+  // default shapes
+  if(data && data.success && data.data){
+    const d = Array.isArray(data.data) && data.data.length ? data.data[0] : data.data;
+    displayGeneric(d);
+    return;
   }
-  // start matrix
-  drawMatrix();
-
-  // ---------- Boot intro animation ----------
-  bootfill.style.width = '6%';
-  let bf = 6;
-  const bootTimer = setInterval(()=>{
-    bf += 6 + Math.random()*8;
-    bootfill.style.width = Math.min(98, bf) + '%';
-    if(bf > 92) {
-      clearInterval(bootTimer);
-      setTimeout(()=> {
-        bootfill.style.width = '100%';
-        setTimeout(()=> {
-          introOverlay.style.display = 'none';
-        }, 550);
-      }, 600);
-    }
-  }, 220);
-
-  // ---------- Theme toggle ----------
-  themeToggle.addEventListener('click', ()=>{
-    document.body.classList.toggle('theme-cyan');
-    playBlip();
-    themeToggle.innerHTML = document.body.classList.contains('theme-cyan') ? '<i class="fas fa-exchange-alt"></i> LUCIFER' : '<i class="fas fa-exchange-alt"></i> THEME';
-  });
-
-  // ---------- Option handlers ----------
-  function setActive(btn){
-    [phoneOption,cnicOption,aadhaarOption,indiaPhoneOption].forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+  if(data && (data.name || data.number || data.phone || data.cnic)){
+    displayGeneric(data);
+    return;
   }
-  phoneOption.addEventListener('click', ()=> {
-    setActive(phoneOption); searchType='phone'; searchInput.placeholder='ENTER 11-DIGIT PHONE NUMBER (PK)'; searchInput.maxLength=11; searchInput.value=''; resultContainer.innerHTML='<div class="no-data">ENTER 11-DIGIT PHONE TO SCAN</div>'; playBlip();
-  });
-  cnicOption.addEventListener('click', ()=> {
-    setActive(cnicOption); searchType='cnic'; searchInput.placeholder='ENTER 13-DIGIT CNIC NUMBER (PK)'; searchInput.maxLength=13; searchInput.value=''; resultContainer.innerHTML='<div class="no-data">ENTER 13-DIGIT CNIC TO SCAN</div>'; playBlip();
-  });
-  aadhaarOption.addEventListener('click', ()=> {
-    setActive(aadhaarOption); searchType='aadhaar'; searchInput.placeholder='ENTER 12-DIGIT AADHAAR NUMBER (IN)'; searchInput.maxLength=12; searchInput.value=''; resultContainer.innerHTML='<div class="no-data">ENTER 12-DIGIT AADHAAR TO SCAN</div>'; playBlip();
-  });
-  indiaPhoneOption.addEventListener('click', ()=> {
-    setActive(indiaPhoneOption); searchType='indiaPhone'; searchInput.placeholder='ENTER 10-DIGIT INDIAN PHONE NUMBER'; searchInput.maxLength=10; searchInput.value=''; resultContainer.innerHTML='<div class="no-data">ENTER 10-DIGIT INDIAN PHONE TO SCAN</div>'; playBlip();
-  });
+  // fallback raw JSON
+  output.innerHTML = '<pre style="color:var(--green);font-size:13px">'+JSON.stringify(data, null, 2)+'</pre>';
+}
 
-  // ---------- Search handlers ----------
-  searchBtn.addEventListener('click', searchInfo);
-  searchInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchInfo(); });
+/* renderers */
+function displayAadhaar(obj){
+  const state = obj.homeStateName || 'N/A';
+  const dist = obj.homeDistName || 'N/A';
+  const scheme = obj.schemeName || 'N/A';
+  const rcId = obj.rcId || 'N/A';
+  const addr = obj.address || 'Not Provided';
+  const members = Array.isArray(obj.memberDetailsList) ? obj.memberDetailsList : [];
 
-  function searchInfo(){
-    const v = searchInput.value.trim();
-    if(!v){ showError('PLEASE ENTER A VALUE'); playBlip(); return; }
-    if(!/^\d+$/.test(v)){ showValidationError('INVALID INPUT','Only digits allowed','Example: 03123456789'); playBlip(); return; }
+  let html = '';
+  html += `<div class="res-row"><div class="res-key">STATE</div><div class="res-val">${state}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">DISTRICT</div><div class="res-val">${dist}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">SCHEME</div><div class="res-val">${scheme}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">RC ID</div><div class="res-val">${rcId}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">ADDRESS</div><div class="res-val">${addr}</div></div>`;
 
-    if(searchType==='phone' && v.length!==11){ showValidationError('INVALID PHONE LENGTH','Phone must be 11 digits (PK)','03123456789'); playBlip(); return; }
-    if(searchType==='cnic' && v.length!==13){ showValidationError('INVALID CNIC LENGTH','CNIC must be 13 digits (PK)','0000000000000'); playBlip(); return; }
-    if(searchType==='aadhaar' && v.length!==12){ showValidationError('INVALID AADHAAR LENGTH','Aadhaar must be 12 digits (IN)','123412341234'); playBlip(); return; }
-    if(searchType==='indiaPhone' && v.length!==10){ showValidationError('INVALID INDIAN PHONE LENGTH','Indian phone must be 10 digits','9876543210'); playBlip(); return; }
+  html += `<div class="members"><div style="color:var(--green);font-weight:700;padding:6px 0">FAMILY MEMBERS</div>`;
+  members.forEach((m,idx)=>{
+    html += `<div class="member-item"><div style="color:var(--green)"><strong>#${idx+1}</strong> ${m.memberName||'N/A'}</div><div style="color:var(--text);font-size:13px">Relation: ${m.releationship_name||'N/A'} | UID: ${m.uid||'N/A'}</div></div>`;
+  });
+  html += '</div>';
 
-    // start progress + sound
-    startProgress();
-    playStartChime();
-    resultContainer.innerHTML = `<div class="no-data" style="display:flex;align-items:center;gap:12px"><div style="width:34px;heig
+  output.innerHTML = html;
+}
+
+function displayCallTracer(obj){
+  const keys = [
+    'Owner Name','Number','Owner Address','Mobile State','Hometown','SIM card','Connection',
+    'IMEI number','IP address','MAC address','Tower Locations','Mobile Locations','Reference City',
+    'Owner Personality','Language','Complaints','Tracking History'
+  ];
+  let html = '';
+  keys.forEach(k=>{
+    const val = obj[k] || 'N/A';
+    html += `<div class="res-row"><div class="res-key">${k.toUpperCase()}</div><div class="res-val">${val}</div></div>`;
+  });
+  output.innerHTML = html;
+}
+
+function displayGeneric(u){
+  const name = u.name || u.fullName || u.holder_name || 'N/A';
+  const number = u.number || u.phone || u.mobile || 'N/A';
+  const idv = u.cnic || u.id || u.aadhaar || 'N/A';
+  const addr = u.address || u.location || 'N/A';
+
+  let html = '';
+  html += `<div class="res-row"><div class="res-key">NAME</div><div class="res-val">${name}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">NUMBER</div><div class="res-val">${number}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">ID</div><div class="res-val">${idv}</div></div>`;
+  html += `<div class="res-row"><div class="res-key">ADDRESS</div><div class="res-val">${addr}</div></div>`;
+
+  output.innerHTML = html;
+}
+
+/* small credit click behavior (placeholder) */
+creditBtn.addEventListener('click', function(e){
+  e.preventDefault();
+  // Local hint toast
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#001100;padding:10px 14px;border-radius:6px;color:var(--green);border:1px solid rgba(0,255,42,0.06);z-index:9999';
+  t.textContent = 'Edit the credit link in this HTML locally to redirect to your Telegram.';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+});
+
+/* toggle dark (just visual) */
+document.getElementById('toggleDark').addEventListener('click', ()=> {
+  // purely cosmetic; keeps CRT look
+  document.body.classList.toggle('invert-mode');
+});
+
+/* on load */
+showAwaiting();
+</script>
+</body>
+</html>
