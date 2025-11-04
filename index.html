@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NEXUS / Scanner — Final</title>
+
+  <!-- Font Awesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#071017;
+      --panel:#06121a;
+      --neon-blue:#00eaff;
+      --neon-pink:#ff4d9e;
+      --text:#e6f7fb;
+      --muted:rgba(255,255,255,0.55);
+    }
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+    body{background:linear-gradient(180deg,#020409 0%, #071017 100%);color:var(--text);padding:28px;box-sizing:border-box;}
+    .container{max-width:1100px;margin:0 auto;background:rgba(10,18,24,0.55);border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,0.6);border:1px solid rgba(0,255,255,0.03);}
+    h1{font-size:20px;margin:0 0 8px;color:var(--neon-pink);text-shadow:0 0 10px rgba(255,77,158,0.08);}
+    .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .logo{display:flex;gap:10px;align-items:center}
+    .logo .dot{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--neon-blue),var(--neon-pink));box-shadow:0 8px 30px rgba(0,255,255,0.08), inset 0 -6px 20px rgba(0,0,0,0.2)}
+    .controls{display:flex;gap:8px;align-items:center}
+    .option-btn{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;color:var(--muted);cursor:pointer;display:flex;gap:8px;align-items:center}
+    .option-btn.active{border:1px solid rgba(0,255,255,0.14);color:var(--text);box-shadow:0 8px 30px rgba(0,255,255,0.03);background:linear-gradient(90deg, rgba(0,255,255,0.02), rgba(255,77,158,0.02))}
+    .search-area{display:flex;gap:8px;margin-top:12px}
+    #searchInput{flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text);outline:none;font-size:15px}
+    #searchBtn{padding:12px 16px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--neon-blue),var(--neon-pink));color:#031018;font-weight:700;cursor:pointer;box-shadow:0 8px 30px rgba(0,255,255,0.08)}
+    #themeToggle{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted);cursor:pointer}
+    /* matrix background small */
+    #matrixBg{position:fixed;left:0;top:0;right:0;bottom:0;pointer-events:none;opacity:0.04;mix-blend-mode:screen;}
+    .matrix-char{position:absolute;color:#00fff0;font-family:monospace;font-size:12px;opacity:0.6}
+
+    /* Results panel */
+    .panel{margin-top:18px;padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));border:1px solid rgba(0,255,255,0.03)}
+    .no-data{padding:26px;text-align:center;color:var(--muted)}
+    .loading{display:flex;gap:12px;align-items:center;color:var(--neon-blue);font-weight:700;padding:12px 8px}
+    .spinner{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,0.06);border-top:3px solid var(--neon-blue);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Neon Result Styling */
+    .result-row{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-left:3px solid var(--neon-blue);margin:6px 0;background:rgba(0,255,255,0.03);border-radius:10px;transition:all 0.25s}
+    .result-row:hover{transform:translateX(6px);box-shadow:0 10px 30px rgba(0,255,255,0.06)}
+    .result-label{color:var(--neon-blue);font-weight:700;width:34%}
+    .result-value{width:66%;color:var(--text);font-family:Consolas,monospace;word-wrap:break-word}
+
+    /* Collapsible */
+    .result-section{background:rgba(0,255,255,0.02);border:1px solid rgba(0,255,255,0.04);border-radius:12px;margin:12px 0;overflow:hidden}
+    .section-header{cursor:pointer;background:linear-gradient(90deg, rgba(0,255,255,0.03), rgba(255,77,158,0.02));color:var(--neon-blue);font-weight:700;padding:12px;display:flex;justify-content:space-between;align-items:center}
+    .section-content{display:none;padding:10px 14px;animation:fadeIn 0.5s forwards}
+    .section-header.active + .section-content{display:block}
+    .section-header i{transition:transform 0.3s}
+    .section-header.active i{transform:rotate(90deg)}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+    .credit-bar{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:12px}
+    .credit-btn{
+      display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--neon-pink),var(--neon-blue));color:#031018;font-weight:800;border:none;cursor:pointer;
+      box-shadow:0 12px 40px rgba(255,77,158,0.08), 0 6px 24px rgba(0,255,255,0.06);
+      text-decoration:none;
+    }
+    .credit-btn .pulse{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 18px rgba(255,255,255,0.35), 0 0 40px rgba(255,77,158,0.12)}
+    .credit{color:var(--neon-blue);text-align:center;margin-top:10px;font-weight:700;text-shadow:0 0 8px rgba(0,255,255,0.08)}
+
+    /* Scan progress */
+    .progress-wrap{margin-top:12px}
+    .progress-label{color:var(--muted);font-size:13px;margin-bottom:6px}
+    .progress{width:100%;height:12px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(0,0,0,0.02));overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+    .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--neon-blue),var(--neon-pink));transition:width 0.25s ease}
+
+    /* small helpers */
+    .muted{color:var(--muted);font-size:13px}
+    @media (max-width:720px){.result-label{display:block;width:100%}.result-value{width:100%;margin-top:6px}}
+  </style>
+</head>
+<body>
+  <div id="matrixBg"></div>
+
+  <div class="container">
+    <div class="topbar">
+      <div class="logo">
+        <div class="dot"></div>
+        <div>
+          <h1>NEXUS SCANNER</h1>
+          <div class="muted">Multi-API Lookup • Aadhaar • CallTracer • Default</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="themeToggle" title="Toggle theme"><i class="fas fa-moon"></i> THEME</button>
+      </div>
+    </div>
+
+    <div class="search-options" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="option-btn active" id="phoneOption"><i class="fas fa-phone"></i> SEARCH BY PHONE (PK)</button>
+      <button class="option-btn" id="cnicOption"><i class="fas fa-id-card"></i> SEARCH BY CNIC (PK)</button>
+      <button class="option-btn" id="aadhaarOption"><i class="fas fa-id-badge"></i> SEARCH BY AADHAAR (IN)</button>
+      <button class="option-btn" id="indiaPhoneOption"><i class="fas fa-mobile"></i> SEARCH BY INDIAN PHONE (IN)</button>
+    </div>
+
+    <div class="search-area">
+      <input id="searchInput" placeholder="ENTER 11-DIGIT PHONE NUMBER (PK)" maxlength="11">
+      <button id="searchBtn"><i class="fas fa-search"></i> SCAN</button>
+    </div>
+
+    <div class="panel" id="resultPanel">
+      <div id="resultContainer" class="no-data">
+        ENTER A NUMBER / CNIC / AADHAAR AND CLICK SCAN
+      </div>
+
+      <!-- progress -->
+      <div class="progress-wrap" id="progressWrap" style="display:none">
+        <div class="progress-label">SCANNING DATABASE... <span id="progressPercent">0%</span></div>
+        <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+
+      <div class="credit-bar">
+        <!-- placeholder link for safety (change locally to your telegram if you want) -->
+        <a href="#" id="creditLink" class="credit-btn" title="Credit">
+          <span class="pulse"></span> CREDIT: LuciferSec
+        </a>
+        <div class="muted">Made with ♥ by Faxal</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // -------------- Configuration (APIs) ----------------
+  const DEFAULT_API_TEMPLATE = 'https://fam-official.serv00.net/api/database.php?number={number}';
+  const AADHAAR_API_TEMPLATE = 'https://khandankanaam.alphaapi.workers.dev/fetch?key=paidchx&aadhaar={number}';
+  const INDIA_PHONE_API_TEMPLATE = 'https://calltracerinfoapi.vercel.app/api?number={number}';
+  // ----------------------------------------------------
+
+  // UI references
+  const phoneOption = document.getElementById('phoneOption');
+  const cnicOption = document.getElementById('cnicOption');
+  const aadhaarOption = document.getElementById('aadhaarOption');
+  const indiaPhoneOption = document.getElementById('indiaPhoneOption');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const resultContainer = document.getElementById('resultContainer');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressPercent = document.getElementById('progressPercent');
+  const creditLink = document.getElementById('creditLink');
+  const themeToggle = document.getElementById('themeToggle');
+  const matrixBg = document.getElementById('matrixBg');
+
+  // Default state
+  let searchType = 'phone'; // phone, cnic, aadhaar, indiaPhone
+
+  // Matrix background (small random chars)
+  (function createMatrixEffect(){
+    const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for(let i=0;i<60;i++){
+      const el = document.createElement('div');
+      el.className='matrix-char';
+      el.style.left = (Math.random()*100)+'vw';
+      el.style.top = (Math.random()*100)+'vh';
+      el.style.opacity = (Math.random()*0.4+0.05);
+      el.style.fontSize = (8 + Math.random()*12)+'px';
+      el.textContent = chars[Math.floor(Math.random()*chars.length)];
+      matrixBg.appendChild(el);
+    }
+  })();
+
+  // Option button handlers
+  function setActive(btn){
+    [phoneOption,cnicOption,aadhaarOption,indiaPhoneOption].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  phoneOption.addEventListener('click', ()=> {
+    setActive(phoneOption);
+    searchType='phone';
+    searchInput.placeholder='ENTER 11-DIGIT PHONE NUMBER (PK)';
+    searchInput.maxLength=11;
+    searchInput.value='';
+    resultContainer.innerHTML='<div class="no-data">ENTER 11-DIGIT PHONE TO SCAN</div>';
+  });
+
+  cnicOption.addEventListener('click', ()=> {
+    setActive(cnicOption);
+    searchType='cnic';
+    searchInput.placeholder='ENTER 13-DIGIT CNIC NUMBER (PK)';
+    searchInput.maxLength=13;
+    searchInput.value='';
+    resultContainer.innerHTML='<div class="no-data">ENTER 13-DIGIT CNIC TO SCAN</div>';
+  });
+
+  aadhaarOption.addEventListener('click', ()=> {
+    setActive(aadhaarOption);
+    searchType='aadhaar';
+    searchInput.placeholder='ENTER 12-DIGIT AADHAAR NUMBER (IN)';
+    searchInput.maxLength=12;
+    searchInput.value='';
+    resultContainer.innerHTML='<div class="no-data">ENTER 12-DIGIT AADHAAR TO SCAN</div>';
+  });
+
+  indiaPhoneOption.addEventListener('click', ()=> {
+    setActive(indiaPhoneOption);
+    searchType='indiaPhone';
+    searchInput.placeholder='ENTER 10-DIGIT INDIAN PHONE NUMBER';
+    searchInput.maxLength=10;
+    searchInput.value='';
+    resultContainer.innerHTML='<div class="no-data">ENTER 10-DIGIT INDIAN PHONE TO SCAN</div>';
+  });
+
+  // Theme toggle
+  themeToggle.addEventListener('click', ()=>{
+    document.body.classList.toggle('light-mode');
+    if(document.body.classList.contains('light-mode')) themeToggle.innerHTML = '<i class="fas fa-sun"></i> LIGHT';
+    else themeToggle.innerHTML = '<i class="fas fa-moon"></i> THEME';
+  });
+
+  // Search triggers
+  searchBtn.addEventListener('click', searchInfo);
+  searchInput.addEventListener('keypress', (e)=> { if(e.key === 'Enter') searchInfo(); });
+
+  function searchInfo(){
+    const v = searchInput.value.trim();
+    if(!v){ showError('PLEASE ENTER A VALUE'); return; }
+    if(!/^\d+$/.test(v)){ showValidationError('INVALID INPUT','Only digits allowed','Example: 03123456789'); return; }
+
+    // length checks
+    if(searchType==='phone' && v.length!==11){ showValidationError('INVALID PHONE LENGTH','Phone must be 11 digits (PK)','03123456789'); return; }
+    if(searchType==='cnic' && v.length!==13){ showValidationError('INVALID CNIC LENGTH','CNIC must be 13 digits (PK)','0000000000000'); return; }
+    if(searchType==='aadhaar' && v.length!==12){ showValidationError('INVALID AADHAAR LENGTH','Aadhaar must be 12 digits (IN)','123412341234'); return; }
+    if(searchType==='indiaPhone' && v.length!==10){ showValidationError('INVALID INDIAN PHONE LENGTH','Indian phone must be 10 digits','9876543210'); return; }
+
+    // show loader & start simulated progress
+    startProgress();
+    resultContainer.innerHTML = `<div class="loading"><div class="spinner"></div> SCANNING DATABASE...</div>`;
+
+    const url = buildApiUrl(searchType, v);
+    if(!url){ stopProgress(); showError('API NOT CONFIGURED FOR THIS SEARCH TYPE'); return; }
+
+    // fetch + fallback to proxy if direct fails
+    fetch(url)
+      .then(res => {
+        if(!res.ok) throw new Error('NETWORK_ERROR');
+        // some endpoints return text that is JSON: safe to call res.json()
+        return res.json();
+      })
+      .then(data => {
+        stopProgress();
+        // normalize and display
+        handleApiDisplay(data, searchType, v);
+      })
+      .catch(err => {
+        // try proxy fallback
+        console.warn('Direct fetch failed, trying proxy...', err);
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+        fetch(proxyUrl)
+          .then(res => {
+            if(!res.ok) throw new Error('PROXY_ERROR');
+            return res.json();
+          })
+          .then(data => {
+            stopProgress();
+            handleApiDisplay(data, searchType, v);
+          })
+          .catch(e => {
+            stopProgress();
+            console.error('All fetch attempts failed', e);
+            showError('DATABASE CONNECTION FAILED. TRY AGAIN.');
+          });
+      });
+  }
+
+  function buildApiUrl(type, number){
+    function fill(tpl){ return tpl.replace('{number}', encodeURIComponent(number)); }
+    if(type==='aadhaar') return fill(AADHAAR_API_TEMPLATE);
+    if(type==='indiaPhone') return fill(INDIA_PHONE_API_TEMPLATE);
+    return fill(DEFAULT_API_TEMPLATE);
+  }
+
+  // ----------------- Loading progress simulation -----------------
+  let progressInterval=null;
+  function startProgress(){
+    progressWrap.style.display='block';
+    progressBar.style.width='5%';
+    progressPercent.textContent='5%';
+    let pct=5;
+    clearInterval(progressInterval);
+    progressInterval = setInterval(()=> {
+      // increase quickly at first, slow near end; capped at 92% until done
+      const add = Math.random()*6 + (pct<60 ? 6 : 1.5);
+      pct = Math.min(92, Math.round(pct + add));
+      progressBar.style.width = pct + '%';
+      progressPercent.textContent = pct + '%';
+    }, 450);
+  }
+  function stopProgress(){
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+    progressPercent.textContent = '100%';
+    setTimeout(()=> {
+      progressWrap.style.display='none';
+      progressBar.style.width='0%';
+      progressPercent.textContent = '0%';
+    }, 600);
+  }
+
+  // ----------------- Display handlers -----------------
+  function handleApiDisplay(data, type, query){
+    console.log('API DATA:', data);
+    // Aadhaar: expected household object with memberDetailsList
+    if(data && data.homeStateName && Array.isArray(data.memberDetailsList)){
+      displayAadhaar(data);
+      return;
+    }
+    // CallTracer may return a flat object with keys like "Owner Name"
+    if(data && (data['Owner Name'] || data['SIM card'] || data['Mobile State'])){
+      displayCallTracer(data);
+      return;
+    }
+    // Default: if data.success and data.data either array or object
+    if(data && data.success && data.data){
+      if(Array.isArray(data.data) && data.data.length>0){
+        // show first record as default
+        displayGeneric(data.data[0]);
+        return;
+      }
+      if(typeof data.data === 'object'){
+        displayGeneric(data.data);
+        return;
+      }
+    }
+    // if top-level has name/number
+    if(data && (data.name || data.number || data.phone || data.cnic)){
+      displayGeneric(data);
+      return;
+    }
+    // fallback: show raw JSON
+    resultContainer.innerHTML = `<div class="result-row"><div class="result-label">RAW RESPONSE:</div><div class="result-value"><pre style="white-space:pre-wrap;color:var(--muted)">${JSON.stringify(data, null, 2)}</pre></div></div>`;
+    initCollapsible();
+  }
+
+  function displayAadhaar(obj){
+    const state = obj.homeStateName || 'Unknown';
+    const district = obj.homeDistName || 'Unknown';
+    const scheme = obj.schemeName || 'N/A';
+    const rcId = obj.rcId || 'N/A';
+    const address = obj.address || 'Not Provided';
+    const members = Array.isArray(obj.memberDetailsList) ? obj.memberDetailsList : [];
+
+    let membersHTML = members.map((m, idx)=>`
+      <div class="result-row">
+        <div class="result-label">#${idx+1} ${m.memberName || 'N/A'}</div>
+        <div class="result-value">Relation: ${m.releationship_name || 'N/A'} | UID Linked: ${m.uid || 'N/A'}</div>
+      </div>
+    `).join('');
+
+    resultContainer.innerHTML = `
+      <div class="result-row"><div class="result-label">STATE:</div><div class="result-value">${state}</div></div>
+      <div class="result-row"><div class="result-label">DISTRICT:</div><div class="result-value">${district}</div></div>
+      <div class="result-row"><div class="result-label">SCHEME:</div><div class="result-value">${scheme}</div></div>
+      <div class="result-row"><div class="result-label">RC ID:</div><div class="result-value">${rcId}</div></div>
+      <div class="result-row"><div class="result-label">ADDRESS:</div><div class="result-value">${address}</div></div>
+
+      <div class="result-section">
+        <div class="section-header">👥 FAMILY MEMBERS <i class="fas fa-chevron-right"></i></div>
+        <div class="section-content">${membersHTML || '<div class="no-data">No members found</div>'}</div>
+      </div>
+
+      <div class="credit">CREDIT: Faxal</div>
+    `;
+    initCollapsible();
+  }
+
+  function displayCallTracer(obj){
+    // Many keys - normalize
+    const keys = [
+      ['Owner Name','Owner Name'],
+      ['Number','Number'],
+      ['Owner Address','Owner Address'],
+      ['Mobile State','Mobile State'],
+      ['Hometown','Hometown'],
+      ['SIM card','SIM card'],
+      ['Connection','Connection'],
+      ['IMEI number','IMEI number'],
+      ['IP address','IP address'],
+      ['MAC address','MAC address'],
+      ['Tower Locations','Tower Locations'],
+      ['Mobile Locations','Mobile Locations'],
+      ['Reference City','Reference City'],
+      ['Owner Personality','Owner Personality'],
+      ['Language','Language'],
+      ['Complaints','Complaints'],
+      ['Tracking History','Tracking History']
+    ];
+
+    const rows = keys.map(k => {
+      const label = k[0];
+      const val = obj[label] || obj[k[1]] || 'N/A';
+      return `<div class="result-row"><div class="result-label">${label.toUpperCase()}:</div><div class="result-value">${val}</div></div>`;
+    }).join('');
+
+    resultContainer.innerHTML = `
+      <div class="result-section">
+        <div class="section-header">📱 CALL TRACER DETAILS <i class="fas fa-chevron-right"></i></div>
+        <div class="section-content">${rows}</div>
+      </div>
+      <div class="credit">CREDIT: Faxal</div>
+    `;
+    initCollapsible();
+  }
+
+  function displayGeneric(u){
+    const name = u.name || u.fullName || u.holder_name || 'N/A';
+    const number = u.number || u.phone || u.mobile || 'N/A';
+    const idVal = u.cnic || u.id || u.aadhaar || 'N/A';
+    const address = u.address || u.location || 'N/A';
+
+    resultContainer.innerHTML = `
+      <div class="result-row"><div class="result-label">NAME:</div><div class="result-value">${name}</div></div>
+      <div class="result-row"><div class="result-label">NUMBER:</div><div class="result-value">${number}</div></div>
+      <div class="result-row"><div class="result-label">ID:</div><div class="result-value">${idVal}</div></div>
+      <div class="result-row"><div class="result-label">ADDRESS:</div><div class="result-value">${address}</div></div>
+      <div class="credit">CREDIT: Faxal</div>
+    `;
+    initCollapsible();
+  }
+
+  // ----------------- UI helpers -----------------
+  function showValidationError(title,msg,example){
+    resultContainer.innerHTML = `
+      <div class="validation-error" style="padding:14px;color:var(--neon-pink);font-weight:700">
+        ${title} — ${msg}<div style="margin-top:8px;color:var(--muted)">EXAMPLE: ${example}</div>
+      </div>
+    `;
+  }
+  function showError(msg){
+    resultContainer.innerHTML = `<div class="no-data"><i class="fas fa-exclamation-triangle"></i> ${msg}</div>`;
+  }
+
+  // Collapsible init
+  function initCollapsible(){
+    document.querySelectorAll('.section-header').forEach(h=>{
+      h.addEventListener('click', ()=> {
+        h.classList.toggle('active');
+      });
+    });
+  }
+
+  // Credit button note: placeholder link for safety.
+  creditLink.addEventListener('click', (e)=>{
+    // Prevent redirect by default. If you want it to open Telegram, edit the HTML locally:
+    // change <a href="#" ...> to <a href="https://t.me/LuciferSec" target="_blank" rel="noopener noreferrer">.
+    e.preventDefault();
+    // Visual pulse already on button; we show a small tooltip effect.
+    creditLink.animate([{transform:'translateY(0)'},{transform:'translateY(-6px)'},{transform:'translateY(0)'}],{duration:400});
+    // small toast
+    const old = document.querySelector('.temp-toast');
+    if(old) old.remove();
+    const t = document.createElement('div');
+    t.className='temp-toast';
+    t.style.cssText='position:fixed;right:24px;bottom:24px;background:rgba(0,0,0,0.6);color:var(--text);padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);z-index:9999';
+    t.textContent='Credit button is placeholder. Edit link locally to redirect to your Telegram.';
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),3800);
+  });
+
+});
+</script>
+</body>
+</html>
